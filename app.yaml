@@ -1,9 +1,14 @@
-application: --your-app-id--
+application: appid
 runtime: python27
 version: 1
 api_version: 1
 threadsafe: true
 
 handlers:
-- url: /
+- url: /assets
+  static_dir: assets
+- url: /styles.css
+  static_files: styles.css
+  upload: styles.css
+- url: /.*
   script: rialto.application
