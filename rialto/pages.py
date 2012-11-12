@@ -20,18 +20,21 @@ def generate_menu():
   prefixes = { }
   
   for page in Page.all():
-    if not page.name:
+    name = page.name
+    
+    if not name:
       continue
     
-    if '|' in page.name:
-      section, name = page.name.split('|')
-      section = section.lower()
-      
-      if section not in prefixes:
-        prefixes[section] = [ ]
-      prefixes[section].append((name, page))
-  
-  logging.error(prefixes)
+    if '|' not in name:
+      section = "Crown House "
+      title = name
+    else:
+      section, title = name.split('|')
+    section = section.lower()
+    
+    if section not in prefixes:
+      prefixes[section] = [ ]
+    prefixes[section].append((title, page))
   
   result = [ ]
   
@@ -102,6 +105,8 @@ def view_page(request, page):
 
 @route(r'/', method=GET)
 def view_home_page(request):
+  page_id = ''
+  
   for page in Page.all():
     if page.name is None:
       continue

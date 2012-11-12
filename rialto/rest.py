@@ -33,7 +33,7 @@ class HTML(object):
 
 class Markdown(HTML):
   def __init__(self, code):
-    HTML.__init__(self, markdown.markdown(code))
+    HTML.__init__(self, markdown.markdown(code, ['tables']))
 
 class Response(object):
   def render(self, environ, start_response):
