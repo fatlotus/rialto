@@ -1,0 +1,10 @@
+@font-face {
+    font-family: 'Bevan';
+    src: url('/Resources/Bevan.eot');
+    src: url('/Resources/Bevan.eot?#iefix') format('embedded-opentype'),
+         url('/Resources/Bevan.woff') format('woff'),
+         url('/Resources/Bevan.ttf') format('truetype'),
+         url('/Resources/Bevan.svg#BevanRegular') format('svg');
+    font-weight: normal;
+    font-style: normal;
+}

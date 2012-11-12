@@ -1,0 +1,26 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.1//EN"
+  "http://www.w3.org/TR/xhtml11/DTD/xhtml11.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en">
+<head>
+  <meta http-equiv="Content-type" content="text/html; charset=utf-8"/>
+  <title>Crown House</title>
+  <link rel="stylesheet" href="/styles.css" type="text/css" charset="utf-8"/>
+  <script type="text/javascript" charset="utf-8">
+window.onload = function() {
+  var fixie = document.getElementById('fixie');
+  var textarea = document.getElementById('body');
+  if (!fixie) return;
+  fixie.onclick = function() {
+    textarea.setAttribute('class', fixie.checked ? 'fixed' : 'body');
+  }
+}
+  </script>
+</head>
+<body>
+  <h1>Crown House</h1>
+  <hr/>
+  {{content}}
+  <div class='supplemental'>{{menu}}</div>
+  <div style='clear:right;'><!-- Yuck --></div>
+</body>
+</html>

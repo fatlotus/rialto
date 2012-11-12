@@ -1,0 +1,9 @@
+<form class='editor' method='post' action='{{page}}'>
+  <input type='text' class='title' name='name' value='{{title}}'/>
+  <textarea name='body' id='body'>{{body}}</textarea>
+  <label class='fixedwidth'><input type='checkbox' id='fixie'/> Align columns of text.</label>
+  <div class='changes'>
+    <span class='notice'>{{message}}</span>
+  <input type='submit' class='submit' value='Save Page'/>
+  </div>
+</form>
