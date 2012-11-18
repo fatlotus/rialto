@@ -42,7 +42,7 @@ abbr{font-variant:small-caps;font-size:0.95em;}
 .copy table td{border-left:1px solid #e8e8e8;padding:0.5em;}
 .copy table td{font:0.8em Helvetica,sans-serif;border-bottom:1px solid #e8e8e8;}
 .copy h1{font:bold 1.2em sans-serif;text-transform:uppercase;padding:0.2em 0;}
-.copy img{max-width:100%;float:right;}
+.copy img{max-width:100%;float:right;margin-bottom:1em;}
 .media{width:68%;padding:1em;background-color:#f8f8f8;margin-top:1em;}
 .media p#status{font:bold 0.9em Helvetica,sans-serif;}
 .media .format-type{float:right;}
