@@ -163,14 +163,17 @@ def view_page(request, page):
 
 @route(r'/', method=GET)
 def view_home_page(request):
-  page_id = ''
+  home_page_id = None
+  arbitrary_id = ''
   
   for page in Page.all():
+    arbitrary_id = page.key().id()
+    
     if page.name is None:
       continue
     
-    if 'WELCOME' in page.name.upper():
-      page_id = page.key().id()
+    if 'HOME' in page.name.upper():
+      home_page_id = page.key().id()
       break
   
-  return view_page(request, page_id)
+  return view_page(request, home_page_id or arbitrary_id)
