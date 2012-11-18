@@ -152,7 +152,7 @@ def edit_page(request, page):
     
     return RedirectResponse(page)
 
-@route(r'/pages/([^/]+)', method=GET)
+@route(r'/pages/([0-9]+)', method=GET)
 @resource(Page)
 def view_page(request, page):
   return TemplateResponse('view_page',

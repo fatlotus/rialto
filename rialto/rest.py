@@ -138,7 +138,7 @@ def resource(klass):
       parent = None
       
       for (index, value) in enumerate(vargs):
-        if type(value) not in (str, unicode):
+        if type(value) not in (str, unicode, int, long):
           parent = value
           continue
         
