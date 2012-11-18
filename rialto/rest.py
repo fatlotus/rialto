@@ -3,9 +3,11 @@ import cgi
 import logging
 import re
 import markdown
+import json
+import urlparse
 
 __all__ = ['route', 'POST', 'GET', 'RedirectResponse', 'HTML', 'TemplateResponse',
-           'resource', 'Markdown', 'escape']
+           'resource', 'Markdown', 'escape', 'JSONResponse', 'RawResponse' ]
 
 routes = [ ] # Singleton!
 
@@ -22,8 +24,13 @@ class Request(object):
     value = self.params.getfirst(name)
     if value is None:
       return None
+    elif self.params[name].file is not None:
+      return self.params[name]
     elif type(value) is str:
-      return value.decode('utf-8')
+      try:
+        return value.decode('utf-8')
+      except UnicodeDecodeError:
+        return value
     else:
       return value
 
@@ -39,7 +46,7 @@ class Response(object):
   def render(self, environ, start_response):
     raise NotImplemented
 
-class TemplateResponse(object):
+class TemplateResponse(Response):
   globals = { }
   
   def __init__(self, template, **variables):
@@ -82,9 +89,10 @@ class TemplateResponse(object):
     if self.template != 'index':
       return TemplateResponse('index', content = HTML(result)).render(environ, start_response)
     else:
+      start_response('200 Okay', [ ('Content-type', 'text/html')])
       return [ result.encode('utf-8') ]
   
-class RedirectResponse(object):
+class RedirectResponse(Response):
   def __init__(self, target):
     if hasattr(target, 'locate'):
       self.target = target.locate()
@@ -95,24 +103,59 @@ class RedirectResponse(object):
     start_response('302 Found', [('Location', self.target)])
     return [ ]
 
+class JSONResponse(Response):
+  def __init__(self, value):
+    self.value = value
+  
+  def render(self, environ, start_response):
+    callbacks = urlparse.parse_qs(environ['QUERY_STRING']).get('callback', [ ])
+    
+    if len(callbacks) == 1:
+      prefix = '<script type="text/javascript">%s(' % callbacks[0]
+      suffix = ")</script>"
+    else:
+      prefix = suffix = ""
+    
+    start_response('200 Okay', [('Content-type', 'text/html')])
+    return [ prefix, json.dumps(self.value), suffix ]
+
+class RawResponse(Response):
+  def __init__(self, data, content_type = 'application/octet-stream'):
+    self.data = data
+    self.content_type = content_type
+  
+  def render(self, environ, start_response):
+    start_response('200 Okay', [('Content-type', self.content_type.encode('utf-8'))])
+    return [ self.data ]
+  
 def escape(value):
   value = unicode(value)
   return re.sub(r'[^a-zA-Z0-9]', lambda x: '&#x%02x;' % ord(x.group(0)), value)
 
 def resource(klass):
   def wrap(function):
-    def inner(request, identifier, *vargs, **dargs):
-      try:
-        identifier = int(identifier)
-      except ValueError:
-        return None
+    def inner(request, *vargs, **dargs):
+      parent = None
       
-      instance = klass.get_by_id(identifier)
-      
-      if instance is None:
-        return None
-      
-      return function(request, instance, *vargs, **dargs)
+      for (index, value) in enumerate(vargs):
+        if type(value) not in (str, unicode):
+          parent = value
+          continue
+        
+        try:
+          identifier = int(value)
+        except ValueError:
+          return None
+        
+        instance = klass.get_by_id(identifier, parent = parent)
+        
+        if instance is None:
+          return None
+        
+        shuffle = vargs[0:index] + ( instance, ) + vargs[index + 1:]
+        
+        return function(request, *shuffle, **dargs)
+      return None
     return inner
   return wrap
 

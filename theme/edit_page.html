@@ -7,3 +7,56 @@
   <input type='submit' class='submit' value='Save Page'/>
   </div>
 </form>
+
+<form method='post' class='media' enctype='multipart/form-data' id='upload-form' action='{{page}}/photos' target='iframe'>
+  <h2>Insert Image:</h2>
+  <p id='status'></p>
+  <input type='file' name='upload' id='upload'/>
+  <select name='type' class='format-type'>
+    <option value='markdown' selected='selected'>Markdown</option>
+    <option value='html'>HTML</option>
+  </select>
+  <iframe name='iframe' style='display:none'></iframe>
+</form>
+<script type='text/javascript'>
+(function() {
+  var upload = document.getElementById('upload');
+  var form = document.getElementById('upload-form');
+  var body = document.getElementById('body');
+  var status = document.getElementById('status');
+  
+  upload.onchange = function() {
+    if (this.value)
+      form.submit();
+  }
+  
+  window.trigger = function(x) {
+    if (typeof x.message !== 'undefined') {
+      status.innerText = x.message;
+    }
+    
+    var start = body.selectionStart;
+    var end = body.selectionEnd;
+    
+    body.value = body.value.substring(0, start) + x.markup +
+                 body.value.substring(end);
+    
+    body.selectionStart = end + x.markup.length;
+    body.selectionEnd = end + x.markup.length;
+    
+    form.reset();
+    upload.disabled = false;
+  }
+  
+  form.action += '?callback=window.parent.trigger';
+  
+  form.onsubmit = function() {
+    if (!upload.value)
+      return false;
+    
+    setTimeout(function() {
+      upload.disabled = true;
+    }, 0);
+  }
+})();
+</script>

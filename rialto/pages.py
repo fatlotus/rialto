@@ -3,12 +3,21 @@ from google.appengine.ext import db
 import re
 import logging
 
+IMAGE_TYPES = ['image/png', 'image/jpg', 'image/jpeg', 'image/gif']
+
 class Page(db.Model):
   name = db.StringProperty()
   body = db.TextProperty()
   
   def locate(self):
     return '/pages/%s' % (self.key().id())
+
+class Photo(db.Model):
+  data = db.BlobProperty()
+  content_type = db.StringProperty()
+  
+  def locate(self):
+    return '/pages/%s/photos/%s' % (self.key().parent().id(), self.key().id())
 
 def empty(x):
   if x is None:
@@ -53,17 +62,19 @@ def create_page_form(request):
 @route(r'/create', method = POST)
 def create_page(request):
   if empty(request['name']):
-    return TemplateResponse('create_page', message = 'Please enter a page title before submitting.')
+    return TemplateResponse('create_page',
+      message = 'Please enter a page title before submitting.')
   
   elif empty(request['body']):
-    return TemplateResponse('create_page', message = 'Please enter a page body before submitting.')
+    return TemplateResponse('create_page',
+      message = 'Please enter a page body before submitting.')
   
   page = Page(name = request['name'], body = request['body'])
   page.put()
   
   return RedirectResponse(page)
 
-@route(r'/pages/([^/]+)/edit', method=GET)
+@route(r'/pages/([0-9]+)/edit', method=GET)
 @resource(Page)
 def edit_page_form(request, page):
   return TemplateResponse('edit_page',
@@ -72,7 +83,47 @@ def edit_page_form(request, page):
     page = page
   )
 
-@route(r'/pages/([^/]+)', method=POST)
+@route(r'/pages/([0-9]+)/photos', method=POST)
+@resource(Page)
+def add_photo(request, page):
+  upload = request['upload']
+  
+  if upload.type not in IMAGE_TYPES:
+    markup = ''
+    message = 'Please only attach images.'
+  
+  else:
+    photo = Photo(
+      parent = page,
+      data = upload.file.read(),
+      content_type = upload.type
+    )
+    
+    try:
+      photo.put()
+      
+      if request['type'] == 'html':
+        markup = '\n<img src="' + photo.locate() + '"/>\n'
+      else:
+        markup = '\n![Description of Image](' + photo.locate() + ')\n'
+      
+      message = 'Successfully attached image.'
+    except:
+      markup = ''
+      message = 'Unable to attach image; perhaps you should try a smaller one.'
+  
+  return JSONResponse({
+    'message': message,
+    'markup': markup
+  })
+
+@route(r'/pages/([0-9]+)/photos/([0-9]+)', method=GET)
+@resource(Page)
+@resource(Photo)
+def get_photo(request, page, photo):
+  return RawResponse(photo.data, content_type=photo.content_type)
+
+@route(r'/pages/([0-9]+)', method=POST)
 @resource(Page)
 def edit_page(request, page):
   def failure(message):
@@ -85,11 +136,18 @@ def edit_page(request, page):
   
   if empty(request['name']):
     return failure('Please enter a page name before submitting.')
-  elif empty(request['body']):
-    return failure('Please enter a body before submitting.')
   else:
     page.name = request['name']
-    page.body = request['body']
+    page.body = request['body'] or ""
+    
+    for image in Photo.all().ancestor(page):
+      url = image.locate()
+      
+      matcher = '%s([^0-9]|$)' % re.escape(url)
+      
+      if not re.search(matcher, page.body):
+        image.delete()
+    
     page.put()
     
     return RedirectResponse(page)
