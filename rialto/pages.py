@@ -25,6 +25,7 @@ def empty(x):
   return re.sub(r'[ \t\r\n]', '', unicode(x).lower()) == ''
 
 @TemplateResponse.variable('menu')
+@cache('menu')
 def generate_menu():
   prefixes = { }
   
@@ -55,6 +56,23 @@ def generate_menu():
   
   return HTML(''.join(result))
 
+@cache('home_page')
+def get_home_page():
+  home_page_id = None
+  arbitrary_id = ''
+  
+  for page in Page.all():
+    arbitrary_id = page.key().id()
+    
+    if page.name is None:
+      continue
+    
+    if 'HOME' in page.name.upper():
+      home_page_id = page.key().id()
+      break
+  
+  return home_page_id or arbitrary_id
+
 @route(r'/create', method = GET)
 def create_page_form(request):
   return TemplateResponse('create_page')
@@ -68,6 +86,9 @@ def create_page(request):
   elif empty(request['body']):
     return TemplateResponse('create_page',
       message = 'Please enter a page body before submitting.')
+  
+  invalidate('menu')
+  invalidate('home_page')
   
   page = Page(name = request['name'], body = request['body'])
   page.put()
@@ -137,6 +158,13 @@ def edit_page(request, page):
   if empty(request['name']):
     return failure('Please enter a page name before submitting.')
   else:
+    if page.name != request['name']:
+      invalidate('menu')
+      
+      if (('HOME' in page.name.upper()) or
+          ('HOME' in request['name'].upper())):
+        invalidate('home_page')
+    
     page.name = request['name']
     page.body = request['body'] or ""
     
@@ -163,17 +191,4 @@ def view_page(request, page):
 
 @route(r'/', method=GET)
 def view_home_page(request):
-  home_page_id = None
-  arbitrary_id = ''
-  
-  for page in Page.all():
-    arbitrary_id = page.key().id()
-    
-    if page.name is None:
-      continue
-    
-    if 'HOME' in page.name.upper():
-      home_page_id = page.key().id()
-      break
-  
-  return view_page(request, home_page_id or arbitrary_id)
+  return view_page(request, get_home_page())

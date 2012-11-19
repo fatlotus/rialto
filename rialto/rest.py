@@ -1,3 +1,4 @@
+from google.appengine.api import memcache
 from functools import wraps
 import cgi
 import logging
@@ -7,7 +8,8 @@ import json
 import urlparse
 
 __all__ = ['route', 'POST', 'GET', 'RedirectResponse', 'HTML', 'TemplateResponse',
-           'resource', 'Markdown', 'escape', 'JSONResponse', 'RawResponse' ]
+           'resource', 'Markdown', 'escape', 'JSONResponse', 'RawResponse',
+           'cache', 'invalidate' ]
 
 routes = [ ] # Singleton!
 
@@ -69,7 +71,12 @@ class TemplateResponse(Response):
       value = self.variables.get(name, None)
       
       if value is None:
-        value = self.__class__.globals.get(name, lambda:None)()
+        
+        @cache(name)
+        def retrieve_value():
+          return self.__class__.globals.get(name, lambda:None)()
+        
+        value = retrieve_value()
         
         if value is None:
           return ""
@@ -131,6 +138,24 @@ class RawResponse(Response):
 def escape(value):
   value = unicode(value)
   return re.sub(r'[^a-zA-Z0-9]', lambda x: '&#x%02x;' % ord(x.group(0)), value)
+
+def cache(key):
+  def wrap(function):
+    def inner(*vargs):
+      data = memcache.get('cache:%s' % (key % vargs)
+      
+      if data:
+        return data
+      
+      result = function()
+      memcache.set('cache:%s' % (key % vargs), result)
+      return result
+    
+    return inner
+  return wrap
+
+def invalidate(key, *vargs):
+  memcache.delete('cache:%s' % (key % vargs))
 
 def resource(klass):
   def wrap(function):
