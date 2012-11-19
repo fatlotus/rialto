@@ -80,8 +80,6 @@ class TemplateResponse(Response):
         
         if value is None:
           return ""
-        
-        logging.error(value.code)
       
       if isinstance(value, HTML):
         return value.code
@@ -142,7 +140,7 @@ def escape(value):
 def cache(key):
   def wrap(function):
     def inner(*vargs):
-      data = memcache.get('cache:%s' % (key % vargs)
+      data = memcache.get('cache:%s' % (key % vargs))
       
       if data:
         return data
